@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "./supabase";
 import { LOGO_BASE64, SERVICE_IMAGES } from "./assets/resources";
 
@@ -948,20 +948,24 @@ export default function App(){
   };
 
 function PinModal({pinInput,setPinInput,onConfirm,onCancel}){
+  const inputRef = useRef(null);
+  useEffect(()=>{
+    setTimeout(()=>{ if(inputRef.current) inputRef.current.focus(); }, 100);
+  },[]);
   return(
-    <div style={{position:"fixed",inset:0,background:"rgba(30,24,16,0.65)",zIndex:500,display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
+    <div style={{position:"fixed",inset:0,background:"rgba(30,24,16,0.65)",zIndex:500,display:"flex",alignItems:"center",justifyContent:"center",padding:24}} onClick={e=>{if(e.target===e.currentTarget)onCancel();}}>
       <div style={{background:C.surface,borderRadius:16,padding:28,width:"100%",maxWidth:320,textAlign:"center"}}>
         <h3 style={{fontFamily:FD,fontSize:22,color:C.charcoal,margin:"0 0 6px"}}>Panel Admin</h3>
         <p style={{fontFamily:FB,fontSize:13,color:C.muted,margin:"0 0 18px"}}>Ingresa tu PIN</p>
         <input
+          ref={inputRef}
           type="password"
           value={pinInput}
           onChange={e=>setPinInput(e.target.value)}
           onKeyDown={e=>e.key==="Enter"&&onConfirm()}
-          placeholder="PIN"
-          maxLength={6}
-          autoFocus
-          style={{width:"100%",padding:"12px",borderRadius:8,border:`1.5px solid ${C.border}`,fontFamily:FB,fontSize:20,textAlign:"center",letterSpacing:8,color:C.charcoal,background:C.bg,boxSizing:"border-box",outline:"none",marginBottom:14}}
+          placeholder="••••"
+          maxLength={12}
+          style={{width:"100%",padding:"14px",borderRadius:8,border:`1.5px solid ${C.border}`,fontFamily:FB,fontSize:24,textAlign:"center",letterSpacing:10,color:C.charcoal,background:C.bg,boxSizing:"border-box",outline:"none",marginBottom:14}}
         />
         <div style={{display:"flex",gap:10}}>
           <Btn label="Cancelar" onClick={onCancel} variant="ghost" full/>

@@ -675,33 +675,47 @@ function AdminClientes({clients,loading,agenda}){
 }
 
 // ── ADMIN SERVICIOS ──────────────────────────────────────────
+function ServiceForm({catId,catName,catEmoji,item,onSave,onCancel}){
+  const [form,setForm]=useState({name:item.name||"",duration:item.duration||60,price:item.price||0,desc:item.desc||"",id:item.id});
+  const [saving,setSaving]=useState(false);
+  const save=async()=>{setSaving(true);await onSave(catId,catName,catEmoji,form);setSaving(false);};
+  return(
+    <div style={{padding:"24px 20px 90px"}}>
+      <PageHeader eyebrow="Admin · Servicios" title={item.id?"Editar servicio":"Nuevo servicio"}/>
+      <div style={{background:C.surface,borderRadius:14,padding:20}}>
+        <Inp label="Nombre" value={form.name} onChange={v=>setForm(s=>({...s,name:v}))} required/>
+        <Inp label="Duración (minutos)" value={form.duration} onChange={v=>setForm(s=>({...s,duration:v}))} type="number"/>
+        <Inp label="Precio (COP)" value={form.price} onChange={v=>setForm(s=>({...s,price:v}))} type="number"/>
+        <div style={{marginBottom:14}}>
+          <label style={{display:"block",fontFamily:FB,fontSize:11,letterSpacing:1.5,textTransform:"uppercase",color:C.muted,marginBottom:5}}>Descripción</label>
+          <textarea value={form.desc} onChange={e=>setForm(s=>({...s,desc:e.target.value}))} rows={2}
+            style={{width:"100%",padding:"10px 12px",borderRadius:8,border:`1.5px solid ${C.border}`,fontFamily:FB,fontSize:14,color:C.charcoal,background:C.bg,boxSizing:"border-box",outline:"none",resize:"none"}}/>
+        </div>
+        <div style={{display:"flex",gap:10}}>
+          <Btn label="Cancelar" onClick={onCancel} variant="ghost"/>
+          <div style={{flex:1}}><Btn label={saving?"Guardando...":"Guardar"} onClick={save} variant="gold" full disabled={!form.name||saving}/></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AdminServicios({services,loading,addService,updateService,deleteService,addCategory}){
   const [editing,setEditing]=useState(null);
   const [newCatName,setNewCatName]=useState("");
-  const [saving,setSaving]=useState(false);
   if(loading&&services.length===0)return<Loading/>;
+
   if(editing){
-    const{catId,catName,catEmoji,item}=editing;
-    const[form,setForm]=useState({name:item.name||"",duration:item.duration||60,price:item.price||0,desc:item.desc||"",id:item.id});
-    const save=async()=>{setSaving(true);if(form.id)await updateService(form.id,form);else await addService(catName,catEmoji,form);setSaving(false);setEditing(null);};
     return(
-      <div style={{padding:"24px 20px 90px"}}>
-        <PageHeader eyebrow="Admin · Servicios" title={item.id?"Editar":"Nuevo servicio"}/>
-        <div style={{background:C.surface,borderRadius:14,padding:20}}>
-          <Inp label="Nombre" value={form.name} onChange={v=>setForm(s=>({...s,name:v}))} required/>
-          <Inp label="Duración (minutos)" value={form.duration} onChange={v=>setForm(s=>({...s,duration:v}))} type="number"/>
-          <Inp label="Precio (COP)" value={form.price} onChange={v=>setForm(s=>({...s,price:v}))} type="number"/>
-          <div style={{marginBottom:14}}>
-            <label style={{display:"block",fontFamily:FB,fontSize:11,letterSpacing:1.5,textTransform:"uppercase",color:C.muted,marginBottom:5}}>Descripción</label>
-            <textarea value={form.desc} onChange={e=>setForm(s=>({...s,desc:e.target.value}))} rows={2}
-              style={{width:"100%",padding:"10px 12px",borderRadius:8,border:`1.5px solid ${C.border}`,fontFamily:FB,fontSize:14,color:C.charcoal,background:C.bg,boxSizing:"border-box",outline:"none",resize:"none"}}/>
-          </div>
-          <div style={{display:"flex",gap:10}}>
-            <Btn label="Cancelar" onClick={()=>setEditing(null)} variant="ghost"/>
-            <div style={{flex:1}}><Btn label={saving?"Guardando...":"Guardar"} onClick={save} variant="gold" full disabled={!form.name||saving}/></div>
-          </div>
-        </div>
-      </div>
+      <ServiceForm
+        catId={editing.catId} catName={editing.catName} catEmoji={editing.catEmoji} item={editing.item}
+        onSave={async(catId,catName,catEmoji,form)=>{
+          if(form.id)await updateService(form.id,form);
+          else await addService(catName,catEmoji,form);
+          setEditing(null);
+        }}
+        onCancel={()=>setEditing(null)}
+      />
     );
   }
   return(
@@ -737,38 +751,50 @@ function AdminServicios({services,loading,addService,updateService,deleteService
 }
 
 // ── ADMIN PERSONAL ───────────────────────────────────────────
-function AdminPersonal({personal,addPersonal,updatePersonal,deletePersonal}){
-  const [editing,setEditing]=useState(null);
-  const [saving,setSaving]=useState(false);
+function PersonalForm({item, onSave, onCancel}){
   const EMOJIS=["💅","✂️","💇","💆","💄","✨","🌟","👑"];
-
-  if(editing){
-    const item=editing;
-    const[form,setForm]=useState({name:item.name||"",specialty:item.specialty||"",emoji:item.emoji||"💅",id:item.id});
-    const save=async()=>{
-      setSaving(true);
-      if(form.id)await updatePersonal(form.id,form);
-      else await addPersonal(form);
-      setSaving(false);setEditing(null);
-    };
-    return(
-      <div style={{padding:"24px 20px 90px"}}>
-        <PageHeader eyebrow="Admin · Personal" title={item.id?"Editar":"Agregar especialista"}/>
-        <div style={{background:C.surface,borderRadius:14,padding:20}}>
-          <div style={{textAlign:"center",marginBottom:20}}>
-            <div style={{width:70,height:70,borderRadius:"50%",background:`linear-gradient(135deg,${C.goldLight},${C.gold})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:36,margin:"0 auto 12px"}}>{form.emoji}</div>
-            <div style={{display:"flex",gap:8,justifyContent:"center",flexWrap:"wrap"}}>
-              {EMOJIS.map(e=><button key={e} onClick={()=>setForm(s=>({...s,emoji:e}))} style={{width:36,height:36,borderRadius:"50%",border:`2px solid ${form.emoji===e?C.gold:C.border}`,background:form.emoji===e?C.champagne:C.bg,fontSize:18,cursor:"pointer"}}>{e}</button>)}
-            </div>
-          </div>
-          <Inp label="Nombre completo" value={form.name} onChange={v=>setForm(s=>({...s,name:v}))} required/>
-          <Inp label="Especialidad" value={form.specialty} onChange={v=>setForm(s=>({...s,specialty:v}))} placeholder="Ej: Uñas & Nail Art"/>
-          <div style={{display:"flex",gap:10}}>
-            <Btn label="Cancelar" onClick={()=>setEditing(null)} variant="ghost"/>
-            <div style={{flex:1}}><Btn label={saving?"Guardando...":"Guardar"} onClick={save} variant="gold" full disabled={!form.name||saving}/></div>
+  const [form,setForm]=useState({name:item.name||"",specialty:item.specialty||"",emoji:item.emoji||"💅",id:item.id});
+  const [saving,setSaving]=useState(false);
+  const save=async()=>{
+    setSaving(true);
+    await onSave(form);
+    setSaving(false);
+  };
+  return(
+    <div style={{padding:"24px 20px 90px"}}>
+      <PageHeader eyebrow="Admin · Personal" title={item.id?"Editar especialista":"Agregar especialista"}/>
+      <div style={{background:C.surface,borderRadius:14,padding:20}}>
+        <div style={{textAlign:"center",marginBottom:20}}>
+          <div style={{width:70,height:70,borderRadius:"50%",background:`linear-gradient(135deg,${C.goldLight},${C.gold})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:36,margin:"0 auto 12px"}}>{form.emoji}</div>
+          <div style={{display:"flex",gap:8,justifyContent:"center",flexWrap:"wrap"}}>
+            {EMOJIS.map(e=><button key={e} onClick={()=>setForm(s=>({...s,emoji:e}))} style={{width:36,height:36,borderRadius:"50%",border:`2px solid ${form.emoji===e?C.gold:C.border}`,background:form.emoji===e?C.champagne:C.bg,fontSize:18,cursor:"pointer"}}>{e}</button>)}
           </div>
         </div>
+        <Inp label="Nombre completo" value={form.name} onChange={v=>setForm(s=>({...s,name:v}))} required/>
+        <Inp label="Especialidad" value={form.specialty} onChange={v=>setForm(s=>({...s,specialty:v}))} placeholder="Ej: Uñas & Nail Art"/>
+        <div style={{display:"flex",gap:10}}>
+          <Btn label="Cancelar" onClick={onCancel} variant="ghost"/>
+          <div style={{flex:1}}><Btn label={saving?"Guardando...":"Guardar"} onClick={save} variant="gold" full disabled={!form.name||saving}/></div>
+        </div>
       </div>
+    </div>
+  );
+}
+
+function AdminPersonal({personal,addPersonal,updatePersonal,deletePersonal}){
+  const [editing,setEditing]=useState(null);
+
+  if(editing){
+    return(
+      <PersonalForm
+        item={editing}
+        onSave={async(form)=>{
+          if(form.id)await updatePersonal(form.id,form);
+          else await addPersonal(form);
+          setEditing(null);
+        }}
+        onCancel={()=>setEditing(null)}
+      />
     );
   }
 

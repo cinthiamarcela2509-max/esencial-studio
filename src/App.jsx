@@ -945,12 +945,13 @@ export default function App(){
     try{localStorage.setItem("es_admin_pin",newPin);}catch{}
   };
 
-  const switchToAdmin=()=>{
-    if(pinInput===adminPin){setIsAdmin(true);setTab("admin-agenda");setShowPin(false);setPinInput("");}
-    else{setPinInput("");}
+  const switchToAdmin=(pin)=>{
+    if(pin===adminPin){setIsAdmin(true);setTab("admin-agenda");setShowPin(false);}
+    else{setShowPin(false);setTimeout(()=>setShowPin(true),100);}
   };
 
-function PinModal({pinInput,setPinInput,onConfirm,onCancel}){
+function PinModal({onConfirm,onCancel}){
+  const [val,setVal]=useState("");
   return(
     <div style={{position:"fixed",inset:0,background:"rgba(30,24,16,0.65)",zIndex:500,display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
       <div style={{background:C.surface,borderRadius:16,padding:28,width:"100%",maxWidth:320,textAlign:"center"}}>
@@ -958,16 +959,16 @@ function PinModal({pinInput,setPinInput,onConfirm,onCancel}){
         <p style={{fontFamily:FB,fontSize:13,color:C.muted,margin:"0 0 18px"}}>Ingresa tu PIN</p>
         <input
           type="password"
-          value={pinInput}
-          onChange={e=>setPinInput(e.target.value)}
-          onKeyDown={e=>e.key==="Enter"&&onConfirm()}
+          defaultValue=""
+          onChange={e=>setVal(e.target.value)}
+          onKeyDown={e=>e.key==="Enter"&&onConfirm(val)}
           placeholder="••••"
           maxLength={12}
           style={{width:"100%",padding:"14px",borderRadius:8,border:`1.5px solid ${C.border}`,fontFamily:FB,fontSize:24,textAlign:"center",letterSpacing:10,color:C.charcoal,background:C.bg,boxSizing:"border-box",outline:"none",marginBottom:14}}
         />
         <div style={{display:"flex",gap:10}}>
           <Btn label="Cancelar" onClick={onCancel} variant="ghost" full/>
-          <Btn label="Ingresar" onClick={onConfirm} variant="gold" full/>
+          <Btn label="Ingresar" onClick={()=>onConfirm(val)} variant="gold" full/>
         </div>
       </div>
     </div>
@@ -978,7 +979,7 @@ function PinModal({pinInput,setPinInput,onConfirm,onCancel}){
     return(
       <div style={{fontFamily:FB,maxWidth:430,margin:"0 auto",position:"relative",boxShadow:"0 0 50px rgba(0,0,0,0.1)"}}>
         <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
-        {showPin&&<PinModal pinInput={pinInput} setPinInput={setPinInput} onConfirm={switchToAdmin} onCancel={()=>{setShowPin(false);setPinInput("");}}/>}
+        {showPin&&<PinModal onConfirm={switchToAdmin} onCancel={()=>setShowPin(false)}/>}
         <ViewBienvenida setCurrentUser={u=>{setCurrentUser(u);setTab("inicio");}} registerClient={registerClient} loginClient={loginClient} onAdminTap={()=>setShowPin(true)}/>
       </div>
     );
@@ -987,7 +988,7 @@ function PinModal({pinInput,setPinInput,onConfirm,onCancel}){
   return(
     <div style={{fontFamily:FB,background:C.bg,minHeight:"100vh",maxWidth:430,margin:"0 auto",position:"relative",boxShadow:"0 0 50px rgba(0,0,0,0.1)"}}>
       <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
-      {showPin&&<PinModal pinInput={pinInput} setPinInput={setPinInput} onConfirm={switchToAdmin} onCancel={()=>{setShowPin(false);setPinInput("");}}/>}
+      {showPin&&<PinModal onConfirm={switchToAdmin} onCancel={()=>setShowPin(false)}/>}
 
       {!isAdmin&&(
         <>

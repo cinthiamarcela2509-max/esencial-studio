@@ -165,7 +165,7 @@ function BottomNav({tab,setTab,isAdmin}){
 }
 
 // ── BIENVENIDA ────────────────────────────────────────────────
-function ViewBienvenida({setCurrentUser,registerClient,loginClient,onSecretTap}){
+function ViewBienvenida({setCurrentUser,registerClient,loginClient,onAdminTap}){
   const [mode,setMode]=useState("welcome");
   const [form,setForm]=useState({name:"",phone:"",email:"",notes:""});
   const [loginPhone,setLoginPhone]=useState("");
@@ -194,7 +194,8 @@ function ViewBienvenida({setCurrentUser,registerClient,loginClient,onSecretTap})
       <div style={{position:"absolute",top:-80,right:-80,width:280,height:280,borderRadius:"50%",background:C.gold,opacity:0.07}}/>
       <div style={{position:"absolute",bottom:-40,left:-40,width:180,height:180,borderRadius:"50%",background:C.goldLight,opacity:0.05}}/>
       <div style={{textAlign:"center",marginBottom:44,flex:1,display:"flex",flexDirection:"column",justifyContent:"center"}}>
-        <img src={LOGO_BASE64} alt="Esencial Studio" style={{width:160,height:"auto",objectFit:"contain",marginBottom:16,margin:"0 auto 16px",display:"block",cursor:"default"}} onClick={onSecretTap}/>        <p style={{fontFamily:FB,fontSize:11,color:"rgba(245,239,230,0.4)",margin:"0 0 8px",letterSpacing:2.5,textTransform:"uppercase"}}>A domicilio · Cúcuta, Colombia</p>
+        <img src={LOGO_BASE64} alt="Esencial Studio" style={{width:160,height:"auto",objectFit:"contain",margin:"0 auto 16px",display:"block"}}/>
+        <p style={{fontFamily:FB,fontSize:11,color:"rgba(245,239,230,0.4)",margin:"0 0 8px",letterSpacing:2.5,textTransform:"uppercase"}}>A domicilio · Cúcuta, Colombia</p>
         <h1 style={{fontFamily:FD,fontSize:38,fontWeight:600,color:"#F6F0E8",margin:"0 0 8px",lineHeight:1.15}}>Belleza que llega<br/>hasta ti</h1>
         <p style={{fontFamily:FB,fontSize:14,color:"rgba(245,239,230,0.4)",margin:0}}>Uñas y peluquería profesional</p>
       </div>
@@ -203,6 +204,8 @@ function ViewBienvenida({setCurrentUser,registerClient,loginClient,onSecretTap})
         <div style={{display:"flex",flexDirection:"column",gap:12}}>
           <button onClick={()=>setMode("register")} style={{padding:"16px",borderRadius:12,border:"none",background:`linear-gradient(135deg,${C.goldLight},${C.gold})`,fontFamily:FB,fontSize:15,fontWeight:700,color:C.charcoal,cursor:"pointer"}}>Crear cuenta</button>
           <button onClick={()=>setMode("login")} style={{padding:"16px",borderRadius:12,border:`1.5px solid rgba(212,168,67,0.35)`,background:"rgba(212,168,67,0.07)",fontFamily:FB,fontSize:15,fontWeight:600,color:C.goldLight,cursor:"pointer"}}>Ya tengo cuenta</button>
+          {/* Botón admin discreto */}
+          <button onClick={onAdminTap} style={{marginTop:8,padding:"8px",background:"none",border:"none",fontFamily:FB,fontSize:11,color:"rgba(245,239,230,0.15)",cursor:"pointer",letterSpacing:1}}>· · ·</button>
         </div>
       )}
 
@@ -948,17 +951,12 @@ export default function App(){
   };
 
 function PinModal({pinInput,setPinInput,onConfirm,onCancel}){
-  const inputRef = useRef(null);
-  useEffect(()=>{
-    setTimeout(()=>{ if(inputRef.current) inputRef.current.focus(); }, 100);
-  },[]);
   return(
-    <div style={{position:"fixed",inset:0,background:"rgba(30,24,16,0.65)",zIndex:500,display:"flex",alignItems:"center",justifyContent:"center",padding:24}} onClick={e=>{if(e.target===e.currentTarget)onCancel();}}>
+    <div style={{position:"fixed",inset:0,background:"rgba(30,24,16,0.65)",zIndex:500,display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
       <div style={{background:C.surface,borderRadius:16,padding:28,width:"100%",maxWidth:320,textAlign:"center"}}>
         <h3 style={{fontFamily:FD,fontSize:22,color:C.charcoal,margin:"0 0 6px"}}>Panel Admin</h3>
         <p style={{fontFamily:FB,fontSize:13,color:C.muted,margin:"0 0 18px"}}>Ingresa tu PIN</p>
         <input
-          ref={inputRef}
           type="password"
           value={pinInput}
           onChange={e=>setPinInput(e.target.value)}
@@ -980,7 +978,8 @@ function PinModal({pinInput,setPinInput,onConfirm,onCancel}){
     return(
       <div style={{fontFamily:FB,maxWidth:430,margin:"0 auto",position:"relative",boxShadow:"0 0 50px rgba(0,0,0,0.1)"}}>
         <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
-        {showPin&&<PinModal pinInput={pinInput} setPinInput={setPinInput} onConfirm={switchToAdmin} onCancel={()=>{setShowPin(false);setPinInput("");}}/>} setCurrentUser={u=>{setCurrentUser(u);setTab("inicio");}} registerClient={registerClient} loginClient={loginClient} onSecretTap={handleSecretTap}/>
+        {showPin&&<PinModal pinInput={pinInput} setPinInput={setPinInput} onConfirm={switchToAdmin} onCancel={()=>{setShowPin(false);setPinInput("");}}/>}
+        <ViewBienvenida setCurrentUser={u=>{setCurrentUser(u);setTab("inicio");}} registerClient={registerClient} loginClient={loginClient} onAdminTap={()=>setShowPin(true)}/>
       </div>
     );
   }
@@ -988,7 +987,6 @@ function PinModal({pinInput,setPinInput,onConfirm,onCancel}){
   return(
     <div style={{fontFamily:FB,background:C.bg,minHeight:"100vh",maxWidth:430,margin:"0 auto",position:"relative",boxShadow:"0 0 50px rgba(0,0,0,0.1)"}}>
       <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
-      {!isAdmin&&<div style={{position:"fixed",top:0,right:0,width:60,height:60,zIndex:200,cursor:"default"}} onClick={handleSecretTap}/>}
       {showPin&&<PinModal pinInput={pinInput} setPinInput={setPinInput} onConfirm={switchToAdmin} onCancel={()=>{setShowPin(false);setPinInput("");}}/>}
 
       {!isAdmin&&(

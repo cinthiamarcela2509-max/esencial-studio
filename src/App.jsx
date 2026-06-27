@@ -88,13 +88,13 @@ function useAgenda(){
   const [loading,setLoading]=useState(true);
   const load=useCallback(async()=>{
     const{data}=await supabase.from("citas").select("*").order("fecha").order("hora");
-    if(data)setAgenda(data.map(a=>({id:a.id,clientId:a.cliente_id,clientName:a.cliente_nombre,serviceId:a.servicio_id,serviceName:a.servicio_nombre,personalId:a.personal_id,personalName:a.personal_nombre,duration:a.duracion,date:a.fecha,time:a.hora?.slice(0,5),note:a.nota,status:a.estado})));
+    if(data)setAgenda(data.map(a=>({id:a.id,clientId:a.cliente_id,clientName:a.cliente_nombre,clientPhone:a.cliente_telefono,serviceId:a.servicio_id,serviceName:a.servicio_nombre,personalId:a.personal_id,personalName:a.personal_nombre,duration:a.duracion,date:a.fecha,time:a.hora?.slice(0,5),note:a.nota,status:a.estado})));
     setLoading(false);
   },[]);
   useEffect(()=>{load();},[load]);
   useEffect(()=>{const i=setInterval(load,20000);return()=>clearInterval(i);},[load]);
   const bookAppointment=async(b)=>{
-    await supabase.from("citas").insert({cliente_id:b.clientId,cliente_nombre:b.clientName,servicio_id:b.serviceId,servicio_nombre:b.serviceName,personal_id:b.personalId,personal_nombre:b.personalName,duracion:b.duration,fecha:b.date,hora:b.time,nota:b.note,estado:"pending"});
+    await supabase.from("citas").insert({cliente_id:b.clientId,cliente_nombre:b.clientName,cliente_telefono:b.clientPhone,servicio_id:b.serviceId,servicio_nombre:b.serviceName,personal_id:b.personalId,personal_nombre:b.personalName,duracion:b.duration,fecha:b.date,hora:b.time,nota:b.note,estado:"pending"});
     load();
   };
   const updateStatus=async(id,estado)=>{await supabase.from("citas").update({estado}).eq("id",id);load();};
@@ -363,7 +363,7 @@ function ViewReservar({services,agenda,personal,bookAppointment,currentUser,setT
 
   const confirm=async()=>{
     setSaving(true);
-    await bookAppointment({clientId:currentUser.id,clientName:currentUser.name,serviceId:srvId,serviceName:srv.name,personalId:staffId,personalName:staff.name,duration:srv.duration,date,time,note});
+    await bookAppointment({clientId:currentUser.id,clientName:currentUser.name,clientPhone:currentUser.phone,serviceId:srvId,serviceName:srv.name,personalId:staffId,personalName:staff.name,duration:srv.duration,date,time,note});
     await updateClientAfterBooking(currentUser.id,srv.name,date);
     setSaving(false);
     setDone(true);
@@ -521,8 +521,16 @@ function ViewReservar({services,agenda,personal,bookAppointment,currentUser,setT
 }
 
 // ── PERFIL ───────────────────────────────────────────────────
-function ViewPerfil({currentUser,setCurrentUser,agenda}){
+function ViewPerfil({currentUser,setCurrentUser,agenda,updateStatus}){
   const myBookings=agenda.filter(a=>a.clientId===currentUser.id).sort((a,b)=>a.date>b.date?-1:1);
+  const [cancelling,setCancelling]=useState(null);
+
+  const cancelCita=async(id)=>{
+    setCancelling(id);
+    await updateStatus(id,"cancelled");
+    setCancelling(null);
+  };
+
   return(
     <div style={{padding:"24px 20px 90px"}}>
       <PageHeader eyebrow="Mi cuenta" title={currentUser.name.split(" ")[0]}
@@ -540,18 +548,30 @@ function ViewPerfil({currentUser,setCurrentUser,agenda}){
       </div>
       <p style={{fontFamily:FB,fontSize:11,letterSpacing:2,color:C.muted,textTransform:"uppercase",marginBottom:12}}>Mis citas</p>
       {myBookings.length===0&&<p style={{fontFamily:FB,fontSize:14,color:C.muted,textAlign:"center",margin:"20px 0"}}>No tienes citas aún.</p>}
-      {myBookings.map(b=>(
-        <div key={b.id} style={{background:C.surface,borderRadius:12,padding:"12px 14px",marginBottom:8}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-            <div>
-              <p style={{fontFamily:FB,fontSize:14,fontWeight:600,color:C.charcoal,margin:"0 0 2px"}}>{b.serviceName}</p>
-              <p style={{fontFamily:FB,fontSize:12,color:C.muted,margin:"0 0 2px"}}>👤 {b.personalName||"—"}</p>
-              <p style={{fontFamily:FB,fontSize:12,color:C.muted,margin:0}}>{fdate(b.date)} · {b.time}</p>
+      {myBookings.map(b=>{
+        const isPast=b.date<todayStr()||(b.date===todayStr()&&b.time<=nowTime());
+        return(
+          <div key={b.id} style={{background:C.surface,borderRadius:12,padding:"14px 16px",marginBottom:10}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
+              <div>
+                <p style={{fontFamily:FB,fontSize:14,fontWeight:600,color:C.charcoal,margin:"0 0 2px"}}>{b.serviceName}</p>
+                {b.personalName&&<p style={{fontFamily:FB,fontSize:12,color:C.muted,margin:"0 0 2px"}}>👤 {b.personalName}</p>}
+                <p style={{fontFamily:FB,fontSize:12,color:C.muted,margin:0}}>📅 {fdate(b.date)} · ⏰ {b.time}</p>
+              </div>
+              <Tag color={b.status}/>
             </div>
-            <Tag color={b.status}/>
+            {/* Botón cancelar — solo citas futuras no canceladas */}
+            {!isPast&&b.status!=="cancelled"&&(
+              <button
+                onClick={()=>cancelCita(b.id)}
+                disabled={cancelling===b.id}
+                style={{marginTop:8,padding:"7px 16px",borderRadius:10,border:"none",background:C.redPale,fontFamily:FB,fontSize:12,fontWeight:600,color:C.red,cursor:"pointer",opacity:cancelling===b.id?0.6:1}}>
+                {cancelling===b.id?"Cancelando...":"✕ Cancelar cita"}
+              </button>
+            )}
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -596,28 +616,45 @@ function AdminAgenda({agenda,updateStatus,loading,personal}){
 
       {list.length===0&&<p style={{fontFamily:FB,fontSize:14,color:C.muted,textAlign:"center",margin:"30px 0"}}>No hay citas en esta categoría.</p>}
       {list.map(a=>{
-        const isPast=a.date<todayStr()||(a.date===todayStr()&&a.time<nowTime());
+        const isPast=a.date<todayStr()||(a.date===todayStr()&&a.time<=nowTime());
+        const phone=a.clientPhone?.replace(/\D/g,"");
+        const fullPhone=phone?.startsWith("57")?phone:`57${phone}`;
+        const waMsg=encodeURIComponent(`Hola ${a.clientName} 👋, te recordamos tu cita en *Esencial Studio*:\n\n💅 *${a.serviceName}*\n📅 ${fdate(a.date)}\n⏰ ${a.time}\n\n¡Te esperamos! Si necesitas cancelar escríbenos.`);
+        const waLink=`https://wa.me/${fullPhone}?text=${waMsg}`;
         return(
-          <div key={a.id} style={{background:C.surface,borderRadius:12,padding:"14px 16px",marginBottom:10,opacity:isPast&&a.status==="cancelled"?0.6:1}}>
+          <div key={a.id} style={{background:C.surface,borderRadius:12,padding:"14px 16px",marginBottom:10}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
               <div>
                 <p style={{fontFamily:FB,fontSize:14,fontWeight:600,color:C.charcoal,margin:"0 0 2px"}}>{a.clientName}</p>
                 <p style={{fontFamily:FB,fontSize:12,color:C.muted,margin:"0 0 1px"}}>{a.serviceName}</p>
-                <p style={{fontFamily:FB,fontSize:12,color:C.gold,margin:0}}>👤 {a.personalName||"—"}</p>
+                <p style={{fontFamily:FB,fontSize:12,color:C.gold,margin:0}}>👤 {a.personalName||"Sin asignar"}</p>
               </div>
               <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4}}>
                 <Tag color={a.status}/>
                 {isPast&&<span style={{fontFamily:FB,fontSize:10,color:C.muted,background:C.surfaceAlt,padding:"2px 8px",borderRadius:10}}>Pasado</span>}
               </div>
             </div>
-            <div style={{display:"flex",gap:8,marginBottom:8,flexWrap:"wrap"}}>
+            <div style={{display:"flex",gap:8,marginBottom:10,flexWrap:"wrap"}}>
               {[["📅",fdate(a.date)],["⏰",a.time],["⏱",fd(a.duration)]].map(([icon,val])=>(
                 <span key={icon} style={{background:C.bg,borderRadius:8,padding:"5px 10px",fontFamily:FB,fontSize:12,color:C.charcoal}}>{icon} {val}</span>
               ))}
             </div>
             {a.note&&<p style={{fontFamily:FB,fontSize:12,color:C.muted,margin:"0 0 10px",padding:"6px 10px",background:C.champagne,borderRadius:8}}>📝 {a.note}</p>}
-            {!isPast&&a.status==="pending"&&<div style={{display:"flex",gap:8}}><Btn label="✓ Confirmar" onClick={()=>updateStatus(a.id,"confirmed")} variant="gold" small/><Btn label="✕ Cancelar" onClick={()=>updateStatus(a.id,"cancelled")} variant="red" small/></div>}
-            {!isPast&&a.status==="confirmed"&&<Btn label="✕ Cancelar" onClick={()=>updateStatus(a.id,"cancelled")} variant="red" small/>}
+            <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+              {/* WhatsApp recordatorio */}
+              {a.clientPhone&&a.status!=="cancelled"&&(
+                <a href={waLink} target="_blank" rel="noopener noreferrer"
+                  style={{padding:"7px 14px",borderRadius:10,background:"#25D366",color:"#fff",fontFamily:FB,fontSize:12,fontWeight:600,textDecoration:"none",display:"inline-flex",alignItems:"center",gap:5}}>
+                  📲 Recordatorio
+                </a>
+              )}
+              {/* Futuras pendientes: confirmar y cancelar */}
+              {!isPast&&a.status==="pending"&&<><Btn label="✓ Confirmar" onClick={()=>updateStatus(a.id,"confirmed")} variant="gold" small/><Btn label="✕ Cancelar" onClick={()=>updateStatus(a.id,"cancelled")} variant="red" small/></>}
+              {/* Futuras confirmadas: solo cancelar */}
+              {!isPast&&a.status==="confirmed"&&<Btn label="✕ Cancelar" onClick={()=>updateStatus(a.id,"cancelled")} variant="red" small/>}
+              {/* Pasadas pendientes: solo cancelar para limpiar */}
+              {isPast&&a.status==="pending"&&<Btn label="✕ Cancelar" onClick={()=>updateStatus(a.id,"cancelled")} variant="red" small/>}
+            </div>
           </div>
         );
       })}
@@ -946,7 +983,7 @@ export default function App(){
           {tab==="inicio"&&<ViewInicio currentUser={currentUser} agenda={agenda} services={services} setTab={setTab} setCurrentUser={setCurrentUser}/>}
           {tab==="servicios"&&<ViewServicios services={services} loading={srvLoading} setTab={setTab} setPreselect={setPreselect}/>}
           {tab==="reservar"&&<ViewReservar services={services} agenda={agenda} personal={personal} bookAppointment={bookAppointment} currentUser={currentUser} setTab={setTab} preselect={preselect} setPreselect={setPreselect} updateClientAfterBooking={updateClientAfterBooking}/>}
-          {tab==="perfil"&&<ViewPerfil currentUser={currentUser} setCurrentUser={setCurrentUser} agenda={agenda}/>}
+          {tab==="perfil"&&<ViewPerfil currentUser={currentUser} setCurrentUser={setCurrentUser} agenda={agenda} updateStatus={updateStatus}/>}
         </>
       )}
       {isAdmin&&(

@@ -947,27 +947,36 @@ export default function App(){
     else{setPinInput("");}
   };
 
-  const PinModal=()=>(
+function PinModal({pinInput,setPinInput,onConfirm,onCancel}){
+  return(
     <div style={{position:"fixed",inset:0,background:"rgba(30,24,16,0.65)",zIndex:500,display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
       <div style={{background:C.surface,borderRadius:16,padding:28,width:"100%",maxWidth:320,textAlign:"center"}}>
         <h3 style={{fontFamily:FD,fontSize:22,color:C.charcoal,margin:"0 0 6px"}}>Panel Admin</h3>
         <p style={{fontFamily:FB,fontSize:13,color:C.muted,margin:"0 0 18px"}}>Ingresa tu PIN</p>
-        <input type="password" value={pinInput} onChange={e=>setPinInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&switchToAdmin()} placeholder="PIN" maxLength={6}
-          style={{width:"100%",padding:"12px",borderRadius:8,border:`1.5px solid ${C.border}`,fontFamily:FB,fontSize:20,textAlign:"center",letterSpacing:8,color:C.charcoal,background:C.bg,boxSizing:"border-box",outline:"none",marginBottom:14}}/>
+        <input
+          type="password"
+          value={pinInput}
+          onChange={e=>setPinInput(e.target.value)}
+          onKeyDown={e=>e.key==="Enter"&&onConfirm()}
+          placeholder="PIN"
+          maxLength={6}
+          autoFocus
+          style={{width:"100%",padding:"12px",borderRadius:8,border:`1.5px solid ${C.border}`,fontFamily:FB,fontSize:20,textAlign:"center",letterSpacing:8,color:C.charcoal,background:C.bg,boxSizing:"border-box",outline:"none",marginBottom:14}}
+        />
         <div style={{display:"flex",gap:10}}>
-          <Btn label="Cancelar" onClick={()=>{setShowPin(false);setPinInput("");}} variant="ghost" full/>
-          <Btn label="Ingresar" onClick={switchToAdmin} variant="gold" full/>
+          <Btn label="Cancelar" onClick={onCancel} variant="ghost" full/>
+          <Btn label="Ingresar" onClick={onConfirm} variant="gold" full/>
         </div>
       </div>
     </div>
   );
+}
 
   if(!currentUser&&!isAdmin){
     return(
       <div style={{fontFamily:FB,maxWidth:430,margin:"0 auto",position:"relative",boxShadow:"0 0 50px rgba(0,0,0,0.1)"}}>
         <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
-        {showPin&&<PinModal/>}
-        <ViewBienvenida setCurrentUser={u=>{setCurrentUser(u);setTab("inicio");}} registerClient={registerClient} loginClient={loginClient} onSecretTap={handleSecretTap}/>
+        {showPin&&<PinModal pinInput={pinInput} setPinInput={setPinInput} onConfirm={switchToAdmin} onCancel={()=>{setShowPin(false);setPinInput("");}}/>} setCurrentUser={u=>{setCurrentUser(u);setTab("inicio");}} registerClient={registerClient} loginClient={loginClient} onSecretTap={handleSecretTap}/>
       </div>
     );
   }
@@ -976,7 +985,7 @@ export default function App(){
     <div style={{fontFamily:FB,background:C.bg,minHeight:"100vh",maxWidth:430,margin:"0 auto",position:"relative",boxShadow:"0 0 50px rgba(0,0,0,0.1)"}}>
       <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
       {!isAdmin&&<div style={{position:"fixed",top:0,right:0,width:60,height:60,zIndex:200,cursor:"default"}} onClick={handleSecretTap}/>}
-      {showPin&&<PinModal/>}
+      {showPin&&<PinModal pinInput={pinInput} setPinInput={setPinInput} onConfirm={switchToAdmin} onCancel={()=>{setShowPin(false);setPinInput("");}}/>}
 
       {!isAdmin&&(
         <>

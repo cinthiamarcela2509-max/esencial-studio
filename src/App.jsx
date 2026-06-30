@@ -172,6 +172,15 @@ function ViewBienvenida({setCurrentUser,registerClient,loginClient,onAdminTap}){
   const [error,setError]=useState("");
   const [saving,setSaving]=useState(false);
 
+  const handleGoogle=async()=>{
+    setSaving(true);
+    await supabase.auth.signInWithOAuth({
+      provider:"google",
+      options:{ redirectTo: window.location.origin }
+    });
+    setSaving(false);
+  };
+
   const register=async()=>{
     if(!form.name||!form.phone)return;
     setSaving(true);setError("");
@@ -202,9 +211,19 @@ function ViewBienvenida({setCurrentUser,registerClient,loginClient,onAdminTap}){
 
       {mode==="welcome"&&(
         <div style={{display:"flex",flexDirection:"column",gap:12}}>
-          <button onClick={()=>setMode("register")} style={{padding:"16px",borderRadius:12,border:"none",background:`linear-gradient(135deg,${C.goldLight},${C.gold})`,fontFamily:FB,fontSize:15,fontWeight:700,color:C.charcoal,cursor:"pointer"}}>Crear cuenta</button>
-          <button onClick={()=>setMode("login")} style={{padding:"16px",borderRadius:12,border:`1.5px solid rgba(212,168,67,0.35)`,background:"rgba(212,168,67,0.07)",fontFamily:FB,fontSize:15,fontWeight:600,color:C.goldLight,cursor:"pointer"}}>Ya tengo cuenta</button>
-          {/* Botón admin discreto */}
+          {/* Botón Google */}
+          <button onClick={handleGoogle} disabled={saving}
+            style={{padding:"14px 16px",borderRadius:12,border:"none",background:"#fff",fontFamily:FB,fontSize:15,fontWeight:600,color:"#1E1810",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
+            <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.29-8.16 2.29-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg>
+            {saving?"Conectando...":"Continuar con Google"}
+          </button>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <div style={{flex:1,height:1,background:"rgba(245,239,230,0.15)"}}/>
+            <p style={{fontFamily:FB,fontSize:12,color:"rgba(245,239,230,0.4)",margin:0}}>o</p>
+            <div style={{flex:1,height:1,background:"rgba(245,239,230,0.15)"}}/>
+          </div>
+          <button onClick={()=>setMode("register")} style={{padding:"14px",borderRadius:12,border:"none",background:`linear-gradient(135deg,${C.goldLight},${C.gold})`,fontFamily:FB,fontSize:15,fontWeight:700,color:C.charcoal,cursor:"pointer"}}>Crear cuenta con teléfono</button>
+          <button onClick={()=>setMode("login")} style={{padding:"14px",borderRadius:12,border:`1.5px solid rgba(212,168,67,0.35)`,background:"rgba(212,168,67,0.07)",fontFamily:FB,fontSize:15,fontWeight:600,color:C.goldLight,cursor:"pointer"}}>Ya tengo cuenta</button>
           <button onClick={onAdminTap} style={{marginTop:8,padding:"8px",background:"none",border:"none",fontFamily:FB,fontSize:11,color:"rgba(245,239,230,0.15)",cursor:"pointer",letterSpacing:1}}>· · ·</button>
         </div>
       )}
